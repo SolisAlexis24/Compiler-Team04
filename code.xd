@@ -1,2 +1,19 @@
-INT x = 10;
-BOOL y = False;
+@Esto es un comentario 
+
+int main { 
+
+	int y = 0; 
+
+	bool x = true; 
+
+	if (x == true) { 
+
+		y = y+1; 
+
+	}else { 
+
+		y = y –1; 
+
+} 
+
+} 
