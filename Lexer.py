@@ -1,9 +1,10 @@
 import sys
+from prettytable import PrettyTable
 global code #String were the code will be "Downloaded"
 code = ""
 global Token #Dictionary where tokens will be stored an classified
 Token = {"keyword":[], "identifier":[],  "operator":[], "constant":[], "puctuation":[]} #It will have the form {type:[value1, value2, ..., valueN]}
-T_kw = ["int", "bool", "if", "else", "return"] #Token type keyword (RESERVED WORDS)
+T_kw = ["int", "bool", "if", "else", "return", "true", "false"] #Token type keyword (RESERVED WORDS)
 T_op = ["+", "-", "/", "*", "**", "and" , "or" , "not","<", ">", "<=", ">=", "==", "!=", "="] #Token type operator
 T_punct = [";", "(", ")", "{", "}"] #Token type punctuation
 Comment = "@" #Comment
@@ -39,6 +40,7 @@ class Lexer:
         self.line = 0
         self.buffer = ""
         self.flag = 0
+        self.counter = 0
 
     def advanceCurrent(self):
         """
@@ -80,6 +82,22 @@ class Lexer:
         while(self.peekChar != "\n"):
             self.Peek()
 
+    def printTokens(self):
+        table = PrettyTable() #create table
+        keyMax = 0  #max num of element
+        for key in Token.keys(): #block that calculates the max num of elements
+            if (len(Token[key]) > keyMax):
+                keyMax = len(Token[key]) 
+        
+        for key, value in Token.items(): #store elements in column
+            while(len(value) < keyMax):
+                value.append(" ") #If the elements are not equal to the maximum, add spaces
+            table.add_column(key, value) #add elements in column
+        print(table) #print table with elements
+        table = PrettyTable()
+        table.add_column("Total de tokens", [self.counter])
+        print(table)
+
     def scan(self):
         if (self.peekChar != None): #Executes until reach the eof
             if (self.peekChar == " " or self.peekChar =="\t"): #The peek char looks forward if the char is a non-imprimible char.
@@ -97,26 +115,66 @@ class Lexer:
                 self.line += 1 #Increment the atribute line
                 self.equalize() #Equalize pointers
                 self.scan() #Recursion
-            elif (self.currentChar in letters): #If the lexeme begin with a letter         
-                while(self.peekChar != " "): #moves the peekChar until it found a whitespace. Look for the example 1 in the README file
+            elif(self.currentChar in letters): #If the lexeme begin with a letter         
+                while((self.peekChar in letters) or (self.peekChar in numbers) or self.peekChar == '_'): #moves the peekChar until it found a whitespace. Look for the example 1 in the README file
                     self.buffer += self.peekChar #Store the chain onto a buffer
                     self.Peek() #Advance
-                if (self.buffer in T_kw): #If the buffer string is a reserved word
+                if (self.buffer in T_op): #If the buffer string is a operator (and, or, not)
+                    if(not(self.buffer in Token["operator"])): #if is not still stored
+                        Token["operator"].append(self.buffer) #Store it
+                    self.counter += 1
+                    self.emptyBuffer() #empty the buffer
+                    self.equalize()
+                    self.scan()
+                elif (self.buffer in T_kw): #If the buffer string is a reserved word
                     if(not(self.buffer in Token["keyword"])): #if is not still stored
                         Token["keyword"].append(self.buffer) #Store it
+                    self.counter += 1
                     self.emptyBuffer() #empty the buffer
-                    self.Peek()
                     self.equalize()
                     self.scan()
                 else: #if the char is a letter and it is not a keyword, it is an identifier
                     if(not(self.buffer in Token["identifier"])): #if it is not stored already
                         Token["identifier"].append(self.buffer) #Store it
+                    self.counter += 1
                     self.emptyBuffer() #empty the buffer
-                    self.Peek() #Advance the peekchar
                     self.equalize() #equalize the chars
                     self.scan() #Recursion
             elif (self.currentChar in T_punct):
-                
+                if (not(self.currentChar in Token["puctuation"])): #if it is not stored already
+                    Token["puctuation"].append(self.currentChar) #Store it
+                self.counter += 1
+                self.emptyBuffer() #empty the buffer
+                self.Peek() #Advance the peekchar
+                self.equalize() #equalize the chars
+                self.scan() #Recursion 
+            
+            elif (self.currentChar in T_op): #If the lexeme is a operator ("+", "-", "/", "*", "**","<", ">", "<=", ">=", "==", "!=", "=")
+                self.buffer += self.peekChar
+                self.Peek()
+                self.buffer += self.peekChar
+                if (self.buffer in T_op):
+                    if(not(self.buffer in Token["operator"])):
+                        Token["operator"].append(self.buffer)
+                        self.Peek()
+                else:
+                    if(not(self.currentChar in Token["operator"])):      
+                        Token["operator"].append(self.currentChar)
+                self.counter += 1
+                self.emptyBuffer() #empty the buffer
+                self.equalize() #equalize the chars
+                self.scan() #Recursion  
+            
+            elif (self.currentChar in numbers): #If the lexeme begin a digit
+                while(self.peekChar in numbers): #moves the peekChar until it found a whitespace
+                    self.buffer += self.peekChar #Store the chain onto a buffer
+                    self.Peek() #Advance
+                if (not(self.buffer in Token["constant"])): #if it is not stored already
+                    Token["constant"].append(self.buffer) #Store it
+                self.counter += 1
+                self.emptyBuffer() #empty the buffer
+                self.equalize() #equalize the chars
+                self.scan() #Recursion  
         else:
             return
 
@@ -124,7 +182,7 @@ Lexer1 = Lexer(code)
 Lexer1.advanceCurrent()
 Lexer1.Peek()
 Lexer1.scan()
-print(Token)
+Lexer1.printTokens()
 
 
 
