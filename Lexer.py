@@ -4,6 +4,7 @@ global code #String were the code will be "Downloaded"
 code = ""
 global Token #Dictionary where tokens will be stored an classified
 Token = {"keyword":[], "identifier":[],  "operator":[], "constant":[], "puctuation":[]} #It will have the form {type:[value1, value2, ..., valueN]}
+symbolTable = {"if": None, "else":None}
 T_kw = ["int", "bool", "if", "else", "return", "true", "false"] #Token type keyword (RESERVED WORDS)
 T_op = ["+", "-", "/", "*", "**", "and" , "or" , "not","<", ">", "<=", ">=", "==", "!=", "="] #Token type operator
 T_punct = [";", "(", ")", "{", "}"] #Token type punctuation
@@ -127,6 +128,10 @@ class Lexer:
                     self.equalize()
                     self.scan()
                 elif (self.buffer in T_kw): #If the buffer string is a reserved word
+                    if((self.buffer == "int" or self.buffer == "bool") and self.flag == 0):
+                        self.flag = 1
+                    elif((self.buffer == "int" or self.buffer == "bool") and self.flag == 1):
+                        self.throwError(" after a type it must be an identifier")
                     if(not(self.buffer in Token["keyword"])): #if is not still stored
                         Token["keyword"].append(self.buffer) #Store it
                     self.counter += 1
@@ -137,6 +142,7 @@ class Lexer:
                     if(not(self.buffer in Token["identifier"])): #if it is not stored already
                         Token["identifier"].append(self.buffer) #Store it
                     self.counter += 1
+                    self.flag = 0
                     self.emptyBuffer() #empty the buffer
                     self.equalize() #equalize the chars
                     self.scan() #Recursion
@@ -177,6 +183,9 @@ class Lexer:
                 self.scan() #Recursion  
         else:
             return
+    def throwError(self, errorMesage):
+        print("Error in line " + str(self.line) + errorMesage)
+        exit()
 
 Lexer1 = Lexer(code)
 Lexer1.advanceCurrent()
